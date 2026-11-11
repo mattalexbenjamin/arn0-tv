@@ -13,20 +13,53 @@
  */
 window.LAUNCHER_CONFIG = {
     apps: [
-        { id: 'xvvl3S1TT1.TizenTubeStandalone', label: 'YouTube', brand: 'youtube' },
-        { id: 'rJeHak5zRg.Spotify', label: 'Spotify' },
-        { id: 'Jz7aUrV2Q4.Twitch', label: 'Twitch' },
-        { id: 'E0P3lRI4H7.MYTF1', label: 'TF1+' },
-        { id: 'org.tizen.netflix-app', label: 'Netflix' },
-        { id: 'org.tizen.primevideo', label: 'Prime Video' },
-        { id: 'MCmYXNxgcu.DisneyPlus', label: 'Disney+' },
-        { id: 'com.samsung.tv.aria-video', label: 'Apple TV' }
+        {
+            label: 'YouTube',
+            brand: 'youtube',
+            ids: ['com.samsung.tv.cobalt-yt', '3201412000524', 'org.tizen.youtube', 'xvvl3S1TT1.TizenTubeStandalone'],
+            match: '^YouTube$|^TizenTube$|cobalt-yt'
+        },
+        {
+            label: 'Peacock',
+            brand: 'peacock',
+            ids: ['kxGLvv9j50.PeacockTV', '3202008021877', 'kxGLvv9j50.Peacock'],
+            match: 'peacock'
+        },
+        {
+            label: 'Paramount+',
+            brand: 'paramountplus',
+            ids: ['3201907018809', 'com.cbs.ott', 'FGlEebZ4yP.ParamountPlus'],
+            match: 'paramount'
+        },
+        {
+            label: 'Disney+',
+            brand: 'disneyplus',
+            ids: ['3201901017640', 'MCmYXNxgcu.DisneyPlus'],
+            match: '^Disney\\+?$|disney'
+        },
+        {
+            label: 'Spotify',
+            brand: 'spotify',
+            ids: ['3201606009684', 'rJeHak5zRg.Spotify'],
+            match: '^spotify'
+        },
+        {
+            label: 'Max',
+            brand: 'max',
+            ids: ['3201601007250', '3202303029472', 'com.hbo.max', '9q46Ju8vG8.HBO'],
+            match: '^Max$|^HBO Max$|(^|\\s)max(\\s|$)|hbo'
+        },
+        {
+            label: 'Prime Video',
+            brand: 'primevideo',
+            ids: ['3201512006785', 'org.tizen.primevideo', 'com.amazon.tizen.primevideo'],
+            match: 'prime ?video'
+        }
     ],
 
     inputs: [
-        { hdmi: 1, label: 'Nintendo Switch 2', brand: 'switch' },
-        { hdmi: 2, label: 'PlayStation 5', brand: 'playstation' },
-        { hdmi: 4, label: 'Xbox Series X', brand: 'xbox' }
+        { hdmi: 1, label: 'Xbox Series X', brand: 'xbox' },
+        { hdmi: 2, label: 'Nintendo Switch 2', brand: 'switch' }
     ],
 
     // How an input tile switches the TV. See README "HDMI inputs".
@@ -40,7 +73,7 @@ window.LAUNCHER_CONFIG = {
     theme: {
         // Starting wallpaper (key from js/wallpapers.js), or null for none (plain gradient).
         // Changed from Settings → Background; the TV remembers the choice.
-        wallpaper: null
+        wallpaper: 'milky-way-4k'
     },
 
     /*
@@ -53,9 +86,9 @@ window.LAUNCHER_CONFIG = {
      * not something you type with a remote.
      */
     weather: {
-        latitude: null,
-        longitude: null,
-        unit: 'celsius'         // 'celsius' | 'fahrenheit'
+        latitude: 40.74,
+        longitude: -73.95,
+        unit: 'fahrenheit'         // 'celsius' | 'fahrenheit'
     },
 
     /*

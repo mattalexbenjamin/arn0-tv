@@ -228,6 +228,11 @@
             case KEY.RIGHT: move(0, 1); break;
             case KEY.ENTER:
                 var cur = def.focusEl ? def.focusEl() : focusedEl();
+                if (window.Sound && Sound.select) Sound.select();
+                if (cur) {
+                    cur.classList.add('pressed');
+                    setTimeout(function () { cur.classList.remove('pressed'); }, 180);
+                }
                 if (cur && cur._item && def.activate) def.activate(cur._item, cur);
                 break;
             case KEY.BACK: case KEY.ESC: case KEY.BACKSPACE: back(); break;

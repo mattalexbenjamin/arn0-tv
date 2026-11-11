@@ -28,6 +28,24 @@ const types = {
 
 createServer(async (req, res) => {
     const path = decodeURIComponent(new URL(req.url, 'http://x').pathname);
+
+    // Development proxy for Google Calendar iCal to bypass desktop browser CORS:
+    if (path === '/api/calendar') {
+        const https = await import('node:https');
+        const calUrl = 'https://calendar.google.com/calendar/ical/vnjok0el4dkicvbv6nc1afijes%40group.calendar.google.com/private-941ae3036bc9c1b3d819209bb26d3750/basic.ics';
+        https.get(calUrl, (cRes) => {
+            res.writeHead(cRes.statusCode, {
+                'Content-Type': 'text/calendar; charset=utf-8',
+                'Access-Control-Allow-Origin': '*',
+                'Cache-Control': 'no-store'
+            });
+            cRes.pipe(res);
+        }).on('error', () => {
+            res.writeHead(502).end('Calendar fetch error');
+        });
+        return;
+    }
+
     const file = normalize(join(root, path === '/' ? 'index.html' : path));
     if (!file.startsWith(root)) {
         res.writeHead(403).end();

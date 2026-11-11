@@ -18,6 +18,8 @@ window.BRANDS = [
     { key: 'twitch', match: /twitch/i, mark: 'twitch', bg: '#9146ff', fg: '#fff' },
     { key: 'tf1', match: /tf1/i, text: 'TF1+', bg: 'linear-gradient(135deg,#071a4d,#1d4ed8)', fg: '#fff' },
     { key: 'crunchyroll', match: /crunchyroll/i, mark: 'crunchyroll', bg: '#f47521', fg: '#fff' },
+    { key: 'peacock', match: /peacock/i, text: 'Peacock', bg: 'linear-gradient(135deg,#0a0a0a,#1f2937)', fg: '#fff' },
+    { key: 'paramountplus', match: /paramount/i, text: 'Paramount+', bg: 'linear-gradient(135deg,#002b66,#005bb5)', fg: '#fff' },
 
     // Consoles (used by inputs in config.js)
     { key: 'playstation', mark: 'playstation', bg: 'linear-gradient(135deg,#00205c,#0070d1)', fg: '#fff' },

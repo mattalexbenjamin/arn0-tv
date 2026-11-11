@@ -8,7 +8,9 @@
     var NUMERIC_ID = /^\d{9,13}$/;
     var PRELOADED = [
         'org.tizen.netflix-app', 'org.tizen.primevideo', 'org.tizen.apple.apple-music',
-        'org.tizen.browser', 'com.samsung.tv.aria-video'
+        'org.tizen.browser', 'com.samsung.tv.aria-video', 'com.samsung.tv.cobalt-yt',
+        '3201412000524', '3201512006785', '3201901017640', '3201606009684',
+        '3201601007250', '3201907018809', '3202008021877'
     ];
     var INTERNAL = [
         'adplatform.ADPlayer', 'WykOS4t4F0.cmsWebApp', '25emanual3.emanual',
@@ -45,10 +47,42 @@
         }), 8000, 'Launch');
     }
 
+    function launchWithFallback(item, apps) {
+        var ids = [];
+        if (item.id) ids.push(item.id);
+        if (Array.isArray(item.ids)) {
+            item.ids.forEach(function (id) {
+                if (ids.indexOf(id) < 0) ids.push(id);
+            });
+        }
+        if (apps && item.label) {
+            var target = (item.label || '').trim().toLowerCase();
+            apps.forEach(function (a) {
+                if ((a.name || '').trim().toLowerCase() === target && ids.indexOf(a.id) < 0) {
+                    ids.push(a.id);
+                }
+            });
+        }
+
+        function tryNext(index) {
+            if (index >= ids.length) {
+                return Promise.reject(new Error('App not found on TV: ' + (item.label || item.id)));
+            }
+            return launch(ids[index]).catch(function (err) {
+                if (index + 1 < ids.length) {
+                    return tryNext(index + 1);
+                }
+                throw err;
+            });
+        }
+
+        return tryNext(0);
+    }
+
     function isConsumer(app) {
         if (PRELOADED.indexOf(app.id) >= 0) return true;
         if (!app.show || INTERNAL.indexOf(app.id) >= 0) return false;
-        if (!STORE_ID.test(app.id) && !NUMERIC_ID.test(app.id)) return false;
+        if (!STORE_ID.test(app.id) && !NUMERIC_ID.test(app.id) && !/^com\.[a-z0-9_-]+\.[a-z0-9_.-]+$/i.test(app.id)) return false;
         return !NOISE.test(app.name + ' ' + app.id);
     }
 
@@ -69,13 +103,35 @@
         var out = [];
         (cfg.apps || []).forEach(function (entry) {
             var re = entry.match ? new RegExp(entry.match, 'i') : null;
+            var ids = [];
+            if (entry.id) ids.push(entry.id);
+            if (Array.isArray(entry.ids)) ids = ids.concat(entry.ids);
+
             var candidates = apps.filter(function (a) {
                 if (used[a.id]) return false;
-                if (entry.id) return a.id === entry.id;
-                return re && (re.test(a.id) || re.test(a.name));
+                if (ids.indexOf(a.id) >= 0) return true;
+                return !!(re && (re.test(a.id) || re.test(a.name)));
             });
-            // Prefer a visible consumer app when several match (e.g. Netflix and a Netflix service).
-            var app = candidates.find(isConsumer) || candidates[0];
+
+            // Prioritize candidates:
+            // 1. Matches one of entry.ids
+            // 2. Exact name match with entry.label
+            // 3. Consumer app over internal/service
+            candidates.sort(function (a, b) {
+                var aInIds = ids.indexOf(a.id) >= 0 ? 1 : 0;
+                var bInIds = ids.indexOf(b.id) >= 0 ? 1 : 0;
+                if (aInIds !== bInIds) return bInIds - aInIds;
+
+                var aExact = (a.name || '').trim().toLowerCase() === (entry.label || '').trim().toLowerCase() ? 1 : 0;
+                var bExact = (b.name || '').trim().toLowerCase() === (entry.label || '').trim().toLowerCase() ? 1 : 0;
+                if (aExact !== bExact) return bExact - aExact;
+
+                var aCons = isConsumer(a) ? 1 : 0;
+                var bCons = isConsumer(b) ? 1 : 0;
+                return bCons - aCons;
+            });
+
+            var app = candidates[0];
             if (app) {
                 used[app.id] = true;
                 out.push(toItem(app, entry));
@@ -100,6 +156,7 @@
         return {
             kind: 'app',
             id: app.id,
+            ids: entry.ids || (entry.id ? [entry.id] : []),
             label: entry.label || shortName(app.name),
             brand: entry.brand ? findBrand(entry.brand) : findBrand(app),
             iconPath: app.iconPath || ''
@@ -121,6 +178,7 @@
         allSorted: allSorted,
         describe: describe,
         launch: launch,
+        launchWithFallback: launchWithFallback,
         withTimeout: withTimeout
     };
 })();

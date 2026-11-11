@@ -13,7 +13,19 @@
         <section id="home" class="view">
             <header class="clock">
                 <div id="time"><span id="time-main"></span><span id="time-suffix"></span></div>
-                <div id="date"></div>
+                <div id="date-row" class="date-row">
+                    <span id="date"></span>
+                    <span id="home-wx" class="home-wx hidden">
+                        <span class="wx-sep">·</span>
+                        <span id="home-wx-temp"></span>
+                        <span id="home-wx-cond"></span>
+                    </span>
+                    <span id="home-cal" class="home-cal hidden">
+                        <span class="cal-sep">·</span>
+                        <span class="cal-badge">UPCOMING</span>
+                        <span id="home-cal-text"></span>
+                    </span>
+                </div>
             </header>
             <div id="gear" class="gear">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
@@ -134,10 +146,6 @@
             <div id="ss-dark" class="ss-dark"></div>
         </section>
 
-        <section id="runner-game" class="view hidden">
-            <canvas id="runner-canvas" width="1920" height="1080" aria-label="Fiancée runner game"></canvas>
-        </section>
-
         <div id="rename" class="view overlay hidden">
             <div class="menu-box">
                 <div class="dialog-title">Name</div>
@@ -172,6 +180,7 @@
     <script src="js/wallpaper.js"></script>
     <script src="js/appearance.js"></script>
     <script src="js/weather.js"></script>
+    <script src="js/calendar.js"></script>
     <script src="js/sound.js"></script>
     <script src="js/ui.js"></script>
     <script src="js/render-probe.js"></script>
@@ -179,7 +188,6 @@
     <script src="js/screensaver.js"></script>
     <script src="js/home.js"></script>
     <script src="js/settings.js"></script>
-    <script src="js/runner-game.js"></script>
     <script src="js/boot.js"></script>
 </body>
 </html>

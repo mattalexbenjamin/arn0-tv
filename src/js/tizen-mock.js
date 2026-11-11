@@ -19,6 +19,9 @@
         app('org.tizen.netflix-app', 'Netflix'),
         app('org.tizen.primevideo', 'Prime Video'),
         app('MCmYXNxgcu.DisneyPlus', 'Disney+'),
+        app('kxGLvv9j50.Peacock', 'Peacock'),
+        app('3201907018809.ParamountPlus', 'Paramount+'),
+        app('3201601007250.Max', 'Max'),
         app('com.samsung.tv.aria-video', 'Apple TV'),
         app('rJeHak5zRg.Spotify', 'Spotify'),
         app('Jz7aUrV2Q4.Twitch', 'Twitch'),
@@ -38,8 +41,8 @@
     ];
 
     var sources = {
-        connected: [{ type: 'TV', number: 1 }, { type: 'HDMI', number: 2 }, { type: 'HDMI', number: 4 }],
-        disconnected: [{ type: 'HDMI', number: 1 }, { type: 'HDMI', number: 3 }]
+        connected: [{ type: 'TV', number: 1 }, { type: 'HDMI', number: 1 }, { type: 'HDMI', number: 2 }],
+        disconnected: [{ type: 'HDMI', number: 3 }, { type: 'HDMI', number: 4 }]
     };
     var currentSource = sources.connected[0];
 
@@ -50,10 +53,6 @@
             getAppsInfo: function (ok) { later(function () { ok(apps.slice()); }); },
             launch: function (id, ok, err) {
                 console.log('[mock] launch', id);
-                if (id === 'rJeHak5zRg.Spotify') {
-                    later(function () { err({ name: 'NotFoundError', message: 'Mock launch failure' }); });
-                    return;
-                }
                 later(ok);
             },
             getCurrentApplication: function () {

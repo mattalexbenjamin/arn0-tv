@@ -65,6 +65,8 @@
             tile.style.background = item.brand.bg;
             if (item.brand.text) {
                 var word = el('div', 'wordmark', item.brand.text);
+                if (item.brand.text.length >= 9) word.classList.add('wordmark-long');
+                else if (item.brand.text.length >= 7) word.classList.add('wordmark-med');
                 word.style.color = item.brand.fg;
                 tile.appendChild(word);
             } else {
@@ -249,8 +251,13 @@
         });
     }
 
+    var isLaunching = false;
     function launchApp(item) {
-        runLogged('Launch ' + item.id, Apps.launch(item.id)).catch(function (err) {
+        if (isLaunching) return;
+        isLaunching = true;
+        setTimeout(function () { isLaunching = false; }, 2200);
+
+        runLogged('Launch ' + item.label, Apps.launchWithFallback(item, state.apps)).catch(function (err) {
             UI.toast('Could not open ' + item.label + ': ' + DevLog.errorText(err));
         });
     }
@@ -311,8 +318,6 @@
             if (view === 'all') {
                 state.showEverything = !state.showEverything;
                 UI.show('all', { back: true });
-            } else if (view === 'home' && window.RunnerGame) {
-                RunnerGame.open();
             } else return false;
         } else {
             return false;
@@ -328,6 +333,31 @@
         $('time-main').textContent = t.time;
         $('time-suffix').textContent = t.suffix;
         $('date').textContent = Appearance.date(d);
+        var w = window.Weather && Weather.current();
+        var wxEl = $('home-wx');
+        if (wxEl) {
+            if (w) {
+                $('home-wx-temp').textContent = w.temp;
+                $('home-wx-cond').textContent = w.detail ? w.detail.split(' · ')[0] : '';
+                wxEl.classList.remove('hidden');
+            } else {
+                wxEl.classList.add('hidden');
+            }
+        }
+        var calEl = $('home-cal');
+        if (calEl && window.Calendar) {
+            var info = Calendar.upcoming();
+            if (info && info.events && info.events.length > 0) {
+                var textParts = info.events.map(function (ev) {
+                    if (ev.allDay) return ev.summary;
+                    return ev.time + ' · ' + ev.summary;
+                });
+                $('home-cal-text').textContent = info.dayLabel + ' · ' + textParts.join('   |   ');
+                calEl.classList.remove('hidden');
+            } else {
+                calEl.classList.add('hidden');
+            }
+        }
     }
 
     // The TV takes ~4 s to list its ~450 apps, so Home is drawn from the last list we saw
@@ -457,6 +487,8 @@
         });
         Appearance.apply();
         updateClock();
+        if (window.Weather) Weather.onUpdate(updateClock);
+        if (window.Calendar) Calendar.onUpdate(updateClock);
         setInterval(updateClock, 10000);
         renderLab();
         var cached = readCache();
