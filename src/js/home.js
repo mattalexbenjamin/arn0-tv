@@ -353,6 +353,8 @@
                     return ev.time + ' · ' + ev.summary;
                 });
                 $('home-cal-text').textContent = info.dayLabel + ' · ' + textParts.join('   |   ');
+                calEl._item = { kind: 'calendar' };
+                calEl.onclick = function () { UI.show('calendar'); };
                 calEl.classList.remove('hidden');
             } else {
                 calEl.classList.add('hidden');
@@ -438,20 +440,29 @@
         UI.register('home', {
             el: $('home'),
             startRow: 1,
-            hints: [['OK', 'Open'], ['▲', 'Settings']],
+            hints: [['OK', 'Open'], ['▲', 'Calendar / Settings']],
             rows: function () {
-                return [[$('gear')], UI.children($('apps-row')), UI.children($('inputs-row'))];
+                var calPill = $('home-cal');
+                var calVisible = calPill && !calPill.classList.contains('hidden');
+                var gear = $('gear');
+                var topRow = [];
+                if (calVisible) topRow.push(calPill);
+                if (gear) topRow.push(gear);
+                return [topRow, UI.children($('apps-row')), UI.children($('inputs-row'))];
             },
             activate: function (item) {
+                if (!item) return;
                 if (item.kind === 'app') launchApp(item);
                 else if (item.kind === 'all') UI.show('all');
                 else if (item.kind === 'input') openInput(item);
                 else if (item.kind === 'settings') UI.show('settings');
+                else if (item.kind === 'calendar') UI.show('calendar');
             },
             // Home is the root: Back does nothing.
             onBack: function () { return true; }
         });
         $('gear')._item = { kind: 'settings' };
+        $('home-cal')._item = { kind: 'calendar' };
 
         UI.register('all', {
             el: $('all'),

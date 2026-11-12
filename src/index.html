@@ -43,6 +43,18 @@
             </div>
         </section>
 
+        <section id="calendar" class="view page hidden">
+            <header class="page-head cal-head">
+                <div class="cal-title-block">
+                    <h1 id="cal-header-title">The week ahead</h1>
+                    <span id="cal-header-subtitle" class="cal-subtitle"></span>
+                </div>
+                <div id="cal-filters" class="cal-filters"></div>
+            </header>
+            <div id="cal-dayboard" class="dayboard-grid"></div>
+            <div id="cal-detail-shelf" class="detail-shelf"></div>
+        </section>
+
         <section id="all" class="view page hidden">
             <header class="page-head">
                 <h1>All apps</h1>
@@ -143,6 +155,14 @@
                     <div id="ss-date" class="ss-date"></div>
                 </div>
             </div>
+            <div id="ss-up-next" class="ss-up-next-card hidden">
+                <div class="ss-un-badge">UP NEXT</div>
+                <div id="ss-un-title" class="ss-un-title"></div>
+                <div class="ss-un-meta">
+                    <span id="ss-un-cal-tag" class="ss-un-cal-tag"></span>
+                    <span id="ss-un-time" class="ss-un-time"></span>
+                </div>
+            </div>
             <div id="ss-dark" class="ss-dark"></div>
         </section>
 
@@ -183,6 +203,7 @@
     <script src="js/calendar.js"></script>
     <script src="js/sound.js"></script>
     <script src="js/ui.js"></script>
+    <script src="js/calendar-view.js"></script>
     <script src="js/render-probe.js"></script>
     <script src="js/platform-probe.js"></script>
     <script src="js/screensaver.js"></script>

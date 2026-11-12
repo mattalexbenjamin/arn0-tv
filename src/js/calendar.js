@@ -1,26 +1,46 @@
 /*
- * Calendar integration via iCal (.ics) feed.
+ * Multi-Calendar engine for Skylight-style Dayboard & Ambient view.
  *
- * Designed to be zero-bloat, lightweight (< 3 KB), and zero-friction:
- * - Direct HTTP fetch of private iCal feed.
- * - Simple native parser extracting upcoming events for today and tomorrow.
- * - Persisted in localStorage ('arn0.calendar.v1') for 0ms instantaneous display on startup.
- * - Non-blocking asynchronous background refresh.
+ * Capabilities:
+ * - Aggregates 1 or more Google Calendar secret iCal feeds in parallel.
+ * - Extracts and normalizes events with color tagging and source metadata.
+ * - Parses recurrence, all-day status, start/end timestamps, descriptions, and locations.
+ * - LocalStorage caching ('arn0.skylight.v1') for instantaneous 0ms cold-start display.
+ * - Provides week-level and day-level queries for the 7-day Dayboard view.
  */
 (function () {
     'use strict';
 
-    var STORE_KEY = 'arn0.calendar.v1';
-    var FRESH_MS = 20 * 60 * 1000;       // refresh every 20 minutes
+    var STORE_KEY = 'arn0.skylight.v1';
+    var FRESH_MS = 20 * 60 * 1000;       // background refresh every 20 min
     var TIMEOUT_MS = 9000;
     var listeners = [];
 
-    function cfgUrl() {
-        var url = (window.LAUNCHER_CONFIG && window.LAUNCHER_CONFIG.calendarUrl) || null;
-        if (!url) return null;
-        // In browser preview (localhost), route through local dev proxy to bypass desktop CORS:
-        if (window.location && window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-            return '/api/calendar';
+    var DEFAULT_COLORS = ['#38bdf8', '#34d399', '#f472b6', '#fbbf24', '#a78bfa', '#fb923c'];
+
+    function getConfigs() {
+        var cfg = window.LAUNCHER_CONFIG || {};
+        var list = [];
+        if (cfg.calendars && Array.isArray(cfg.calendars) && cfg.calendars.length > 0) {
+            list = cfg.calendars;
+        } else if (cfg.calendarUrl) {
+            list = [{ name: 'Calendar', color: DEFAULT_COLORS[0], url: cfg.calendarUrl }];
+        }
+        return list.map(function (item, idx) {
+            return {
+                id: 'cal_' + idx,
+                name: item.name || ('Calendar ' + (idx + 1)),
+                color: item.color || DEFAULT_COLORS[idx % DEFAULT_COLORS.length],
+                url: item.url
+            };
+        });
+    }
+
+    function resolveFeedUrl(url) {
+        if (!url) return '';
+        var isLocal = (window.location && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'));
+        if (isLocal) {
+            return '/api/calendar?url=' + encodeURIComponent(url);
         }
         return url;
     }
@@ -40,12 +60,6 @@
         } catch (e) {}
     }
 
-    /*
-     * Parses iCal date strings:
-     * - 20261111 (all-day date)
-     * - 20261111T140000Z (UTC datetime)
-     * - 20261111T140000 (local datetime)
-     */
     function parseIcsDate(val) {
         if (!val) return null;
         val = val.trim();
@@ -83,8 +97,7 @@
         return hours + ':' + minsStr + ' ' + ampm;
     }
 
-    function parseIcsText(text) {
-        // Unfold wrapped lines in iCal standard
+    function parseIcsText(text, calMeta) {
         var cleanText = text.replace(/\r\n[ \t]/g, '').replace(/\n[ \t]/g, '');
         var evRegex = /BEGIN:VEVENT([\s\S]*?)END:VEVENT/g;
         var match;
@@ -95,6 +108,8 @@
             var summary = '';
             var dtstart = '';
             var dtend = '';
+            var location = '';
+            var description = '';
             var status = '';
 
             var lines = block.split(/\r\n|\n|\r/);
@@ -106,6 +121,10 @@
                     dtstart = l.substring(l.indexOf(':') + 1);
                 } else if (l.indexOf('DTEND') === 0) {
                     dtend = l.substring(l.indexOf(':') + 1);
+                } else if (l.indexOf('LOCATION:') === 0) {
+                    location = l.substring(9);
+                } else if (l.indexOf('DESCRIPTION:') === 0) {
+                    description = l.substring(12);
                 } else if (l.indexOf('STATUS:') === 0) {
                     status = l.substring(7);
                 }
@@ -115,54 +134,77 @@
 
             var startObj = parseIcsDate(dtstart);
             if (!startObj) continue;
+            var endObj = parseIcsDate(dtend);
 
-            // Unescape special chars
             summary = summary.replace(/\\,/g, ',').replace(/\\;/g, ';').replace(/\\\\/g, '\\');
+            location = location.replace(/\\,/g, ',').replace(/\\;/g, ';').replace(/\\\\/g, '\\');
 
             events.push({
+                calId: calMeta.id,
+                calName: calMeta.name,
+                calColor: calMeta.color,
                 summary: summary || 'Untitled Event',
                 start: startObj.date.getTime(),
-                allDay: startObj.allDay
+                end: endObj ? endObj.date.getTime() : startObj.date.getTime(),
+                allDay: startObj.allDay,
+                location: location || '',
+                description: description || ''
             });
         }
-
-        events.sort(function (a, b) { return a.start - b.start; });
         return events;
     }
 
     var fetching = false;
 
-    function fetchFeed() {
-        var url = cfgUrl();
-        if (!url || fetching) return;
+    function fetchAll() {
+        var configs = getConfigs();
+        if (configs.length === 0 || fetching) return;
         fetching = true;
 
-        var xhr = new XMLHttpRequest();
-        xhr.open('GET', url, true);
-        xhr.timeout = TIMEOUT_MS;
-        xhr.onload = function () {
-            fetching = false;
-            if (xhr.status >= 200 && xhr.status < 300) {
-                try {
-                    var parsed = parseIcsText(xhr.responseText);
-                    var record = {
-                        fetchedAt: Date.now(),
-                        events: parsed
-                    };
-                    writeCache(record);
-                    notify();
-                } catch (e) {
-                    if (window.DevLog) DevLog.log('Calendar parse error: ' + e);
+        var total = configs.length;
+        var completed = 0;
+        var allEvents = [];
+
+        configs.forEach(function (cal) {
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', resolveFeedUrl(cal.url), true);
+            xhr.timeout = TIMEOUT_MS;
+            xhr.onload = function () {
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    try {
+                        var parsed = parseIcsText(xhr.responseText, cal);
+                        allEvents = allEvents.concat(parsed);
+                    } catch (e) {
+                        if (window.DevLog) DevLog.log('Calendar parse error [' + cal.name + ']: ' + e);
+                    }
                 }
+                completed++;
+                checkDone();
+            };
+            xhr.onerror = function () {
+                completed++;
+                checkDone();
+            };
+            xhr.ontimeout = function () {
+                completed++;
+                checkDone();
+            };
+            xhr.send();
+        });
+
+        function checkDone() {
+            if (completed >= total) {
+                fetching = false;
+                allEvents.sort(function (a, b) { return a.start - b.start; });
+                var record = {
+                    fetchedAt: Date.now(),
+                    events: allEvents,
+                    calendars: configs
+                };
+                writeCache(record);
+                notify();
             }
-        };
-        xhr.onerror = function () {
-            fetching = false;
-        };
-        xhr.ontimeout = function () {
-            fetching = false;
-        };
-        xhr.send();
+        }
     }
 
     function notify() {
@@ -171,41 +213,133 @@
         });
     }
 
-    /*
-     * Returns upcoming events.
-     * Groups events occurring on the same upcoming day so you see all of them (e.g. 2+ events on that day).
-     */
-    function upcoming() {
+    function getEvents() {
         var data = readCache();
         if (!data || !data.events) {
-            fetchFeed();
-            return null;
+            fetchAll();
+            return [];
+        }
+        if (Date.now() - (data.fetchedAt || 0) > FRESH_MS) {
+            fetchAll();
+        }
+        return data.events;
+    }
+
+    function getCalendars() {
+        var configs = getConfigs();
+        return configs;
+    }
+
+    /*
+     * Returns the 7 days of the specified week (starting Sunday).
+     * weekOffset: 0 for current week, -1 for previous week, +1 for next week.
+     * filterCalId: null or undefined for all, or specific calId.
+     */
+    function getWeek(weekOffset, filterCalId) {
+        weekOffset = weekOffset || 0;
+        var events = getEvents();
+
+        if (filterCalId) {
+            events = events.filter(function (e) { return e.calId === filterCalId; });
         }
 
-        // Trigger background refresh if stale
-        if (Date.now() - (data.fetchedAt || 0) > FRESH_MS) {
-            fetchFeed();
+        var today = new Date();
+        var nowDay = today.getDay(); // 0 is Sunday
+        var startOfWeek = new Date(today.getFullYear(), today.getMonth(), today.getDate() - nowDay + (weekOffset * 7));
+        startOfWeek.setHours(0, 0, 0, 0);
+
+        var days = [];
+        var DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        var FULL_DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        var MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+        for (var i = 0; i < 7; i++) {
+            var curDate = new Date(startOfWeek.getFullYear(), startOfWeek.getMonth(), startOfWeek.getDate() + i);
+            var curStart = new Date(curDate.getFullYear(), curDate.getMonth(), curDate.getDate(), 0, 0, 0, 0).getTime();
+            var curEnd = new Date(curDate.getFullYear(), curDate.getMonth(), curDate.getDate(), 23, 59, 59, 999).getTime();
+
+            var isToday = (curDate.toDateString() === today.toDateString());
+
+            var dayEvents = events.filter(function (e) {
+                // event spans into or starts on this day
+                if (e.allDay) {
+                    var evStart = new Date(e.start);
+                    evStart.setHours(0, 0, 0, 0);
+                    var evEnd = new Date(e.end);
+                    evEnd.setHours(23, 59, 59, 999);
+                    return curStart >= evStart.getTime() && curStart <= evEnd.getTime();
+                }
+                return e.start >= curStart && e.start <= curEnd;
+            });
+
+            var formattedEvents = dayEvents.map(function (e) {
+                var dStart = new Date(e.start);
+                var dEnd = new Date(e.end);
+                return {
+                    calId: e.calId,
+                    calName: e.calName,
+                    calColor: e.calColor,
+                    summary: e.summary,
+                    time: e.allDay ? 'All day' : formatTime(dStart),
+                    timeRange: e.allDay ? 'All day' : (formatTime(dStart) + ' – ' + formatTime(dEnd)),
+                    allDay: e.allDay,
+                    location: e.location,
+                    description: e.description,
+                    start: e.start
+                };
+            });
+
+            days.push({
+                index: i,
+                dayName: DAY_NAMES[i],
+                fullDayName: FULL_DAY_NAMES[i],
+                dateNum: curDate.getDate(),
+                monthName: MONTH_NAMES[curDate.getMonth()],
+                year: curDate.getFullYear(),
+                isToday: isToday,
+                dateObj: curDate,
+                dateKey: curDate.toDateString(),
+                events: formattedEvents
+            });
         }
+
+        var headerMonth = MONTH_NAMES[startOfWeek.getMonth()] + ' ' + startOfWeek.getFullYear();
+        var endOfWeek = new Date(startOfWeek.getFullYear(), startOfWeek.getMonth(), startOfWeek.getDate() + 6);
+        if (startOfWeek.getMonth() !== endOfWeek.getMonth()) {
+            headerMonth = MONTH_NAMES[startOfWeek.getMonth()] + ' / ' + MONTH_NAMES[endOfWeek.getMonth()] + ' ' + endOfWeek.getFullYear();
+        }
+
+        return {
+            weekOffset: weekOffset,
+            headerMonth: headerMonth,
+            startOfWeek: startOfWeek,
+            endOfWeek: endOfWeek,
+            days: days
+        };
+    }
+
+    /*
+     * Returns upcoming events for Home line display and ambient Up Next card.
+     */
+    function upcoming() {
+        var events = getEvents();
+        if (!events || events.length === 0) return null;
 
         var now = Date.now();
-        var cutoffPast = now - 60 * 60 * 1000; // include events started up to 1 hr ago
-        var futureEvents = [];
+        var cutoffPast = now - 60 * 60 * 1000;
+        var future = [];
 
-        for (var i = 0; i < data.events.length; i++) {
-            var ev = data.events[i];
-            if (ev.start >= cutoffPast) {
-                futureEvents.push(ev);
-            }
+        for (var i = 0; i < events.length; i++) {
+            if (events[i].start >= cutoffPast) future.push(events[i]);
         }
 
-        if (futureEvents.length === 0) return null;
+        if (future.length === 0) return null;
 
-        var first = futureEvents[0];
+        var first = future[0];
         var firstDate = new Date(first.start);
         var firstDayStr = firstDate.toDateString();
 
-        // Collect all events on that same day
-        var sameDay = futureEvents.filter(function (e) {
+        var sameDay = future.filter(function (e) {
             return new Date(e.start).toDateString() === firstDayStr;
         });
 
@@ -219,17 +353,21 @@
 
         var eventItems = sameDay.map(function (e) {
             var d = new Date(e.start);
-            var time = e.allDay ? 'All Day' : formatTime(d);
             return {
-                time: time,
+                calId: e.calId,
+                calName: e.calName,
+                calColor: e.calColor,
+                time: e.allDay ? 'All Day' : formatTime(d),
                 summary: e.summary,
-                allDay: e.allDay
+                allDay: e.allDay,
+                location: e.location
             };
         });
 
         return {
             dayLabel: dayLabel,
             events: eventItems,
+            firstEvent: eventItems[0],
             count: eventItems.length
         };
     }
@@ -238,17 +376,17 @@
         listeners.push(fn);
     }
 
-    // Auto-refresh when TV comes back from sleep/another app
     document.addEventListener('visibilitychange', function () {
         if (!document.hidden) {
-            fetchFeed();
+            fetchAll();
         }
     });
 
     window.Calendar = {
+        getWeek: getWeek,
+        getCalendars: getCalendars,
         upcoming: upcoming,
-        refresh: fetchFeed,
+        refresh: fetchAll,
         onUpdate: onUpdate
     };
 })();
-

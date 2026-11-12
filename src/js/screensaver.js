@@ -246,6 +246,24 @@
         $('ss-wx-detail').textContent = w.detail;
     }
 
+    function renderUpNext() {
+        var card = $('ss-up-next');
+        if (!card) return;
+        var info = window.Calendar && Calendar.upcoming();
+        if (info && info.firstEvent) {
+            var ev = info.firstEvent;
+            $('ss-un-title').textContent = ev.summary;
+            var calTag = $('ss-un-cal-tag');
+            calTag.textContent = ev.calName;
+            calTag.style.borderColor = ev.calColor;
+            calTag.style.color = ev.calColor;
+            $('ss-un-time').textContent = info.dayLabel + ' · ' + ev.time;
+            card.classList.remove('hidden');
+        } else {
+            card.classList.add('hidden');
+        }
+    }
+
     // ---------- Open, tick, close
 
     function openSaver() {
@@ -278,6 +296,7 @@
         updateClock();
         // Shows the cached reading at once, and asks for a new one only if the hour is up.
         renderWeather();
+        renderUpNext();
         if (window.Weather) Weather.refresh();
         var w = photoAt(photoIndex);
         caption(w);

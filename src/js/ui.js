@@ -233,7 +233,8 @@
                     cur.classList.add('pressed');
                     setTimeout(function () { cur.classList.remove('pressed'); }, 180);
                 }
-                if (cur && cur._item && def.activate) def.activate(cur._item, cur);
+                var itm = cur && (cur._item || (cur.id === 'gear' ? { kind: 'settings' } : (cur.id === 'home-cal' ? { kind: 'calendar' } : null)));
+                if (itm && def.activate) def.activate(itm, cur);
                 break;
             case KEY.BACK: case KEY.ESC: case KEY.BACKSPACE: back(); break;
             default:

@@ -168,6 +168,20 @@ h1, h2 {
     display: inline-flex;
     align-items: center;
     color: rgba(255, 255, 255, 0.9);
+    padding: 4px 10px;
+    border-radius: 12px;
+    transition: background 0.16s ease-out, transform 0.16s ease-out, box-shadow 0.16s ease-out;
+    cursor: pointer;
+}
+
+.home-cal.focused {
+    background: rgba(255, 255, 255, 0.15);
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.85), 0 0 20px rgba(255, 255, 255, 0.3);
+    transform: scale(1.02);
+}
+
+.home-cal.pressed {
+    transform: scale(0.98);
 }
 
 .cal-badge {
@@ -1131,4 +1145,399 @@ html.preview, html.preview body {
     background: #000;
     opacity: 0;
     transition: opacity 10000ms linear;
+}
+
+/* ---------- Skylight Dayboard Calendar View ---------- */
+
+.cal-head {
+    top: 60px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+}
+
+.cal-title-block {
+    display: flex;
+    align-items: baseline;
+    gap: 18px;
+}
+
+.cal-title-block h1 {
+    font-size: 48px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    color: #ffffff;
+}
+
+.cal-subtitle {
+    font-size: 26px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.55);
+}
+
+.cal-filters {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.cal-filter-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-family: inherit;
+    font-size: 18px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.7);
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    cursor: pointer;
+    transition: transform 0.16s ease-out, background 0.16s, box-shadow 0.16s;
+}
+
+.cal-filter-pill.active {
+    background: rgba(255, 255, 255, 0.22);
+    color: #ffffff;
+    border-color: rgba(255, 255, 255, 0.35);
+}
+
+.cal-filter-pill.focused {
+    transform: scale(1.06);
+    background: #ffffff;
+    color: #0b0e14;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.9), 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+.pill-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+}
+
+.cal-nav-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: 12px;
+}
+
+.cal-nav-btn {
+    padding: 8px 14px;
+    border-radius: 14px;
+    font-family: inherit;
+    font-size: 16px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.7);
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    cursor: pointer;
+    transition: transform 0.16s ease-out, background 0.16s, box-shadow 0.16s;
+}
+
+.cal-nav-btn.focused {
+    background: #ffffff;
+    color: #0b0e14;
+    transform: scale(1.08);
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.9), 0 8px 20px rgba(0, 0, 0, 0.4);
+}
+
+/* 7-Day Dayboard Columns Grid */
+
+.dayboard-grid {
+    position: absolute;
+    top: 156px;
+    left: var(--edge);
+    right: var(--edge);
+    height: 480px;
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 14px;
+}
+
+.day-col {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    padding: 16px 14px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), background 0.18s, border-color 0.18s, box-shadow 0.18s;
+}
+
+.day-col.is-today {
+    background: rgba(56, 189, 248, 0.08);
+    border-color: rgba(56, 189, 248, 0.3);
+}
+
+.day-col.selected {
+    border-color: rgba(255, 255, 255, 0.4);
+    background: rgba(255, 255, 255, 0.09);
+}
+
+.day-col.focused {
+    transform: translateY(-6px) scale(1.02);
+    background: rgba(255, 255, 255, 0.14);
+    border-color: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 0 0 2.5px rgba(255, 255, 255, 0.9), 0 16px 40px rgba(0, 0, 0, 0.65);
+}
+
+.col-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.col-day-name {
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.65);
+}
+
+.is-today .col-day-name {
+    color: #38bdf8;
+}
+
+.col-date-num {
+    font-size: 20px;
+    font-weight: 700;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.is-today .col-date-num {
+    background: #38bdf8;
+    color: #0b0e14;
+}
+
+.col-events {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+    flex: 1;
+}
+
+.col-clear {
+    margin-top: 10px;
+    font-size: 15px;
+    color: rgba(255, 255, 255, 0.25);
+    text-align: center;
+}
+
+.event-chip {
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.06);
+    border-left: 3.5px solid #38bdf8;
+    overflow: hidden;
+}
+
+.chip-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.95);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-height: 1.25;
+}
+
+.chip-time {
+    margin-top: 3px;
+    font-size: 13px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.55);
+    font-variant-numeric: tabular-nums;
+}
+
+.chip-more {
+    font-size: 13px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.45);
+    padding: 2px 4px;
+}
+
+/* Detail Shelf at bottom */
+
+.detail-shelf {
+    position: absolute;
+    top: 660px;
+    left: var(--edge);
+    right: var(--edge);
+    height: 350px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.detail-header {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    margin-bottom: 18px;
+}
+
+.detail-day-title {
+    font-size: 28px;
+    font-weight: 700;
+    color: #ffffff;
+}
+
+.detail-count-tag {
+    font-size: 18px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.55);
+}
+
+.detail-cards-list {
+    display: flex;
+    gap: 18px;
+    overflow-x: auto;
+    padding-bottom: 12px;
+}
+
+.detail-empty {
+    font-size: 20px;
+    color: rgba(255, 255, 255, 0.35);
+    margin-top: 20px;
+}
+
+.detail-card {
+    display: flex;
+    min-width: 380px;
+    max-width: 460px;
+    background: rgba(255, 255, 255, 0.07);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 18px;
+    overflow: hidden;
+    transition: transform 0.16s ease-out, box-shadow 0.16s, background 0.16s;
+}
+
+.detail-card.focused {
+    transform: scale(1.04);
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 0 0 2.5px rgba(255, 255, 255, 0.9), 0 16px 36px rgba(0, 0, 0, 0.55);
+}
+
+.card-stripe {
+    width: 6px;
+    flex-shrink: 0;
+}
+
+.card-body {
+    padding: 16px 20px;
+    flex: 1;
+    overflow: hidden;
+}
+
+.card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+
+.card-summary {
+    font-size: 21px;
+    font-weight: 600;
+    color: #ffffff;
+    line-height: 1.25;
+}
+
+.card-cal-badge {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    padding: 2px 7px;
+    border-radius: 6px;
+    border: 1px solid currentColor;
+    white-space: nowrap;
+}
+
+.card-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 16px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.card-time {
+    color: rgba(255, 255, 255, 0.85);
+    font-variant-numeric: tabular-nums;
+}
+
+.card-location {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.meta-sep {
+    opacity: 0.45;
+}
+
+/* Ambient Up Next card on idle screensaver */
+
+.ss-up-next-card {
+    position: absolute;
+    bottom: 90px;
+    right: 90px;
+    width: 380px;
+    background: rgba(12, 16, 24, 0.82);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 20px;
+    backdrop-filter: blur(20px);
+    padding: 22px 24px;
+    box-shadow: 0 20px 45px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.ss-un-badge {
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 1.4px;
+    color: rgba(255, 255, 255, 0.5);
+    text-transform: uppercase;
+}
+
+.ss-un-title {
+    font-size: 22px;
+    font-weight: 600;
+    color: #ffffff;
+    line-height: 1.25;
+}
+
+.ss-un-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 16px;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.ss-un-cal-tag {
+    font-size: 13px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.1);
 }
