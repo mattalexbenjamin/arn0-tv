@@ -2,15 +2,22 @@
 (function () {
     'use strict';
 
-    function fitPreview() {
-        if (!window.__TIZEN_MOCK__) return;
+    function fitScreen() {
+        var w = window.innerWidth || document.documentElement.clientWidth || (window.screen && window.screen.width) || 1920;
+        var h = window.innerHeight || document.documentElement.clientHeight || (window.screen && window.screen.height) || 1080;
         document.documentElement.classList.add('preview');
-        var scale = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
-        document.getElementById('stage').style.transform = 'scale(' + scale + ')';
+        var scale = Math.min(w / 1920, h / 1080);
+        var tx = Math.round((w - 1920 * scale) / 2);
+        var ty = Math.round((h - 1080 * scale) / 2);
+        var stage = document.getElementById('stage');
+        if (stage) {
+            stage.style.transformOrigin = '0 0';
+            stage.style.transform = 'translate(' + tx + 'px, ' + ty + 'px) scale(' + scale + ')';
+        }
     }
 
-    fitPreview();
-    window.addEventListener('resize', fitPreview);
+    fitScreen();
+    window.addEventListener('resize', fitScreen);
 
     UI.init();
     Settings.init();

@@ -184,7 +184,7 @@
     // Horizontal for .row-track, vertical for .grid and .vtrack.
     function ensureVisible(item) {
         var track = item.parentNode;
-        var horizontal = track.classList.contains('row-track');
+        var horizontal = track.classList.contains('row-track') || track.classList.contains('detail-cards-list');
         var vertical = track.classList.contains('grid') || track.classList.contains('vtrack');
         if (!horizontal && !vertical) return;
         var port = track.parentNode;
