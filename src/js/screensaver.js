@@ -375,6 +375,11 @@
                 if (open) renderWeather();
             });
         }
+        if (window.Calendar) {
+            Calendar.onUpdate(function () {
+                if (open) renderUpNext();
+            });
+        }
         UI.register('screensaver', {
             el: $('screensaver'),
             hints: [],

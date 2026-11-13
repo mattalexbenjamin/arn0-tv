@@ -12,8 +12,8 @@
     'use strict';
 
     var STORE_KEY = 'arn0.skylight.v1';
-    var FRESH_MS = 20 * 60 * 1000;       // background refresh every 20 min
-    var TIMEOUT_MS = 9000;
+    var FRESH_MS = 15 * 60 * 1000;       // background refresh every 15 min
+    var TIMEOUT_MS = 25000;
     var listeners = [];
 
     var DEFAULT_COLORS = ['#38bdf8', '#34d399', '#f472b6', '#fbbf24', '#a78bfa', '#fb923c'];
@@ -41,23 +41,29 @@
 
     function resolveFeedUrl(url) {
         if (!url) return '';
-        var isLocal = (window.location && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'));
-        if (isLocal) {
+        var isHttp = (window.location && (window.location.protocol === 'http:' || window.location.protocol === 'https:'));
+        if (window.__TIZEN_MOCK__ || isHttp) {
+            if (url.indexOf('/api/calendar') === 0) return url;
             return '/api/calendar?url=' + encodeURIComponent(url);
         }
         return url;
     }
 
+    var memCache = null;
+
     function readCache() {
+        if (memCache) return memCache;
         try {
             var raw = localStorage.getItem(STORE_KEY);
-            return raw ? JSON.parse(raw) : null;
+            memCache = raw ? JSON.parse(raw) : null;
+            return memCache;
         } catch (e) {
             return null;
         }
     }
 
     function writeCache(data) {
+        memCache = data;
         try {
             localStorage.setItem(STORE_KEY, JSON.stringify(data));
         } catch (e) {}
@@ -138,6 +144,13 @@
             var startObj = parseIcsDate(dtstart);
             if (!startObj) continue;
             var endObj = parseIcsDate(dtend);
+            var startMs = startObj.date.getTime();
+            var endMs = endObj ? endObj.date.getTime() : (startObj.allDay ? startMs + 86400000 : startMs + 3600000);
+
+            // Drop historical events older than 14 days and future events beyond 90 days
+            var nowTime = Date.now();
+            if (endMs < nowTime - 14 * 86400000) continue;
+            if (startMs > nowTime + 90 * 86400000) continue;
 
             summary = summary.replace(/\\,/g, ',').replace(/\\;/g, ';').replace(/\\\\/g, '\\');
             location = location.replace(/\\,/g, ',').replace(/\\;/g, ';').replace(/\\\\/g, '\\');
@@ -147,8 +160,8 @@
                 calName: calMeta.name,
                 calColor: calMeta.color,
                 summary: summary || 'Untitled Event',
-                start: startObj.date.getTime(),
-                end: endObj ? endObj.date.getTime() : startObj.date.getTime(),
+                start: startMs,
+                end: endMs,
                 allDay: startObj.allDay,
                 location: location || '',
                 description: description || ''
@@ -169,26 +182,32 @@
         var allEvents = [];
 
         configs.forEach(function (cal) {
+            var reqUrl = resolveFeedUrl(cal.url);
             var xhr = new XMLHttpRequest();
-            xhr.open('GET', resolveFeedUrl(cal.url), true);
+            xhr.open('GET', reqUrl, true);
             xhr.timeout = TIMEOUT_MS;
             xhr.onload = function () {
                 if (xhr.status >= 200 && xhr.status < 300) {
                     try {
                         var parsed = parseIcsText(xhr.responseText, cal);
                         allEvents = allEvents.concat(parsed);
+                        if (window.DevLog) DevLog.log('Calendar loaded [' + cal.name + ']: ' + parsed.length + ' events');
                     } catch (e) {
                         if (window.DevLog) DevLog.log('Calendar parse error [' + cal.name + ']: ' + e);
                     }
+                } else {
+                    if (window.DevLog) DevLog.log('Calendar HTTP ' + xhr.status + ' [' + cal.name + ']');
                 }
                 completed++;
                 checkDone();
             };
             xhr.onerror = function () {
+                if (window.DevLog) DevLog.log('Calendar fetch error [' + cal.name + ']');
                 completed++;
                 checkDone();
             };
             xhr.ontimeout = function () {
+                if (window.DevLog) DevLog.log('Calendar timeout (' + (TIMEOUT_MS / 1000) + 's) [' + cal.name + ']');
                 completed++;
                 checkDone();
             };
@@ -198,14 +217,25 @@
         function checkDone() {
             if (completed >= total) {
                 fetching = false;
-                allEvents.sort(function (a, b) { return a.start - b.start; });
-                var record = {
-                    fetchedAt: Date.now(),
-                    events: allEvents,
-                    calendars: configs
-                };
-                writeCache(record);
-                notify();
+                if (allEvents.length > 0) {
+                    allEvents.sort(function (a, b) { return a.start - b.start; });
+                    var record = {
+                        fetchedAt: Date.now(),
+                        events: allEvents,
+                        calendars: configs
+                    };
+                    writeCache(record);
+                    notify();
+                } else {
+                    // If allEvents is empty, keep existing cache if available
+                    var existing = readCache();
+                    if (!existing || !existing.events || existing.events.length === 0) {
+                        // Retry sooner if we had zero events and no cache
+                        setTimeout(fetchAll, 30000);
+                    } else {
+                        notify();
+                    }
+                }
             }
         }
     }
@@ -218,9 +248,9 @@
 
     function getEvents() {
         var data = readCache();
-        if (!data || !data.events) {
+        if (!data || !data.events || data.events.length === 0) {
             fetchAll();
-            return [];
+            return (data && data.events) ? data.events : [];
         }
         if (Date.now() - (data.fetchedAt || 0) > FRESH_MS) {
             fetchAll();
@@ -261,15 +291,7 @@
             var isToday = (curDate.toDateString() === today.toDateString());
 
             var dayEvents = events.filter(function (e) {
-                // event spans into or starts on this day
-                if (e.allDay) {
-                    var evStart = new Date(e.start);
-                    evStart.setHours(0, 0, 0, 0);
-                    var evEnd = new Date(e.end);
-                    evEnd.setHours(23, 59, 59, 999);
-                    return curStart >= evStart.getTime() && curStart <= evEnd.getTime();
-                }
-                return e.start >= curStart && e.start <= curEnd;
+                return e.start < curEnd && e.end > curStart;
             });
 
             var formattedEvents = dayEvents.map(function (e) {
@@ -326,35 +348,25 @@
         if (!events || events.length === 0) return null;
 
         var now = Date.now();
+        var nowDate = new Date();
+        var todayStart = new Date(nowDate.getFullYear(), nowDate.getMonth(), nowDate.getDate(), 0, 0, 0, 0).getTime();
         var cutoffPast = now - 60 * 60 * 1000;
         var future = [];
 
         for (var i = 0; i < events.length; i++) {
-            if (events[i].start >= cutoffPast) future.push(events[i]);
+            var e = events[i];
+            var isOngoing = e.end > now;
+            var isTodayAllDay = e.allDay && e.end > todayStart && e.start <= (todayStart + 86400000);
+            var isUpcoming = e.start >= cutoffPast;
+            if (isOngoing || isTodayAllDay || isUpcoming) {
+                future.push(e);
+            }
         }
 
         if (future.length === 0) return null;
 
-        var nowDate = new Date();
-        var tomorrow = new Date();
-        tomorrow.setDate(tomorrow.getDate() + 1);
-
-        var first = future[0];
-        var firstDate = new Date(first.start);
-        var firstDayStr = firstDate.toDateString();
-
-        var sameDay = future.filter(function (e) {
-            return new Date(e.start).toDateString() === firstDayStr;
-        });
-
-        var candidateEvents = sameDay;
-        if (candidateEvents.length < 4) {
-            candidateEvents = future.slice(0, 6);
-        }
-
-        var isToday = (firstDayStr === nowDate.toDateString());
-        var isTomorrow = (firstDayStr === tomorrow.toDateString());
-        var primaryDayLabel = isToday ? 'Today' : (isTomorrow ? 'Tomorrow' : (firstDate.getMonth() + 1) + '/' + firstDate.getDate());
+        var tomorrow = new Date(nowDate.getFullYear(), nowDate.getMonth(), nowDate.getDate() + 1);
+        var candidateEvents = future.slice(0, 8);
 
         var eventItems = candidateEvents.map(function (e) {
             var d = new Date(e.start);
@@ -374,7 +386,7 @@
         });
 
         return {
-            dayLabel: primaryDayLabel,
+            dayLabel: eventItems[0].dayLabel,
             events: eventItems,
             firstEvent: eventItems[0],
             count: eventItems.length
@@ -385,6 +397,15 @@
         listeners.push(fn);
     }
 
+    function init() {
+        var cached = readCache();
+        if (cached && cached.events && cached.events.length > 0) {
+            notify();
+        }
+        fetchAll();
+        setInterval(fetchAll, FRESH_MS);
+    }
+
     document.addEventListener('visibilitychange', function () {
         if (!document.hidden) {
             fetchAll();
@@ -392,6 +413,7 @@
     });
 
     window.Calendar = {
+        init: init,
         getWeek: getWeek,
         getCalendars: getCalendars,
         upcoming: upcoming,

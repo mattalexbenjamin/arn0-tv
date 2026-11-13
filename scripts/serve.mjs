@@ -34,16 +34,28 @@ createServer(async (req, res) => {
         const https = await import('node:https');
         const reqUrl = new URL(req.url, 'http://x');
         const targetUrl = reqUrl.searchParams.get('url') || 'https://calendar.google.com/calendar/ical/vnjok0el4dkicvbv6nc1afijes%40group.calendar.google.com/private-941ae3036bc9c1b3d819209bb26d3750/basic.ics';
-        https.get(targetUrl, (cRes) => {
-            res.writeHead(cRes.statusCode, {
-                'Content-Type': 'text/calendar; charset=utf-8',
-                'Access-Control-Allow-Origin': '*',
-                'Cache-Control': 'no-store'
+
+        function fetchUrl(u, hops = 0) {
+            if (hops > 4) {
+                res.writeHead(502).end('Too many redirects');
+                return;
+            }
+            https.get(u, (cRes) => {
+                if (cRes.statusCode >= 300 && cRes.statusCode < 400 && cRes.headers.location) {
+                    fetchUrl(cRes.headers.location, hops + 1);
+                    return;
+                }
+                res.writeHead(cRes.statusCode, {
+                    'Content-Type': 'text/calendar; charset=utf-8',
+                    'Access-Control-Allow-Origin': '*',
+                    'Cache-Control': 'no-store'
+                });
+                cRes.pipe(res);
+            }).on('error', () => {
+                res.writeHead(502).end('Calendar fetch error');
             });
-            cRes.pipe(res);
-        }).on('error', () => {
-            res.writeHead(502).end('Calendar fetch error');
-        });
+        }
+        fetchUrl(targetUrl);
         return;
     }
 

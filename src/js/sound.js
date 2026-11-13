@@ -17,17 +17,18 @@
 
     var DEFAULTS = {
         enabled: true,
-        preset: 'soft',
-        volume: 0.08,
-        minGapMs: 45,   // key repeat can fire faster than this; extra presses are dropped
+        preset: 'apple',
+        volume: 0.10,
+        minGapMs: 38,   // key repeat can fire faster than this; extra presses are dropped
         presets: {
+            apple: { label: 'Apple TV', freq: 880, ms: 26, type: 'sine' },
             soft: { label: 'Soft', freq: 620, ms: 30, type: 'sine' },
             warm: { label: 'Warm', freq: 520, ms: 44, type: 'triangle' },
             bright: { label: 'Bright', freq: 1040, ms: 30, type: 'triangle' }
         },
-        move: { freq: 880, ms: 38, type: 'triangle' },
-        edge: { freq: 200, ms: 70, type: 'sine' },
-        select: { freq: 1320, ms: 55, type: 'triangle' }
+        move: { freq: 880, ms: 26, type: 'sine' },
+        edge: { freq: 180, ms: 55, type: 'sine' },
+        select: { freq: 1200, ms: 48, type: 'sine' }
     };
 
     var ctx = null;
@@ -98,7 +99,14 @@
 
         try {
             // Held keys can arrive while the context is suspended by the platform.
-            if (ac.state === 'suspended' && ac.resume) ac.resume();
+            if (ac.state === 'suspended' && ac.resume) {
+                try {
+                    var res = ac.resume();
+                    if (res && typeof res.catch === 'function') {
+                        res.catch(function () {});
+                    }
+                } catch (e) {}
+            }
 
             var voice = name === 'move' ? selectedPreset() : (c[name] || c.move);
             var t = ac.currentTime;
@@ -106,7 +114,18 @@
 
             var osc = ac.createOscillator();
             osc.type = voice.type;
-            osc.frequency.value = voice.freq;
+
+            if (name === 'select') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(880, t);
+                osc.frequency.exponentialRampToValueAtTime(1440, t + 0.038);
+            } else if (name === 'edge') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(190, t);
+                osc.frequency.exponentialRampToValueAtTime(130, t + seconds);
+            } else {
+                osc.frequency.value = voice.freq;
+            }
 
             var gain = ac.createGain();
             // Tiny attack keeps the start from clicking; exponential decay reads as a tick.
@@ -212,6 +231,7 @@
 
     window.Sound = {
         play: play,
+        select: function () { play('select'); },
         preview: function () { play('move', true); },
         enabled: enabled,
         presetOptions: presetOptions,

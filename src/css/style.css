@@ -75,7 +75,6 @@ html, body {
     overflow: hidden;
     background: var(--bg);
     transform-origin: 0 0;
-    will-change: transform;
 }
 
 #bg {
@@ -85,7 +84,6 @@ html, body {
     width: 1920px;
     height: 1080px;
     background: var(--bg) url("../img/bg.jpg") center / cover no-repeat;
-    will-change: transform;
 }
 
 #bg::after {
@@ -170,16 +168,16 @@ h1, h2 {
     display: inline-flex;
     align-items: center;
     color: rgba(255, 255, 255, 0.9);
-    padding: 4px 10px;
-    border-radius: 12px;
-    transition: background 0.16s ease-out, transform 0.16s ease-out, box-shadow 0.16s ease-out;
+    padding: 6px 14px;
+    border-radius: 14px;
+    transition: background 0.16s ease-out, transform 0.16s ease-out;
     cursor: pointer;
 }
 
 .home-cal.focused {
-    background: rgba(255, 255, 255, 0.15);
-    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.85), 0 0 20px rgba(255, 255, 255, 0.3);
-    transform: scale(1.02);
+    background: rgba(255, 255, 255, 0.18);
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.9), 0 0 24px rgba(56, 189, 248, 0.35);
+    transform: scale(1.03);
 }
 
 .home-cal.pressed {
@@ -187,29 +185,29 @@ h1, h2 {
 }
 
 .cal-badge {
-    font-size: 11px;
+    font-size: 13px;
     font-weight: 700;
-    letter-spacing: 1.2px;
-    padding: 3px 8px;
+    letter-spacing: 1.4px;
+    padding: 4px 10px;
     border-radius: 6px;
     background: rgba(255, 255, 255, 0.12);
     border: 1px solid rgba(255, 255, 255, 0.2);
     margin-right: 12px;
-    color: rgba(255, 255, 255, 0.75);
+    color: rgba(255, 255, 255, 0.85);
     text-shadow: none;
+    flex-shrink: 0;
 }
 
 .cal-ticker-viewport {
     position: relative;
-    max-width: 960px;
-    height: 36px;
+    max-width: 920px;
+    height: 38px;
     overflow: hidden;
     white-space: nowrap;
     display: inline-flex;
     align-items: center;
-    contain: strict;
+    contain: layout paint;
     transform: translateZ(0);
-    backface-visibility: hidden;
     text-shadow: none;
 }
 
@@ -219,12 +217,11 @@ h1, h2 {
     white-space: nowrap;
     will-change: transform;
     transform: translate3d(0, 0, 0);
-    backface-visibility: hidden;
     text-shadow: none;
 }
 
 .cal-ticker-anim {
-    animation: home-ticker-scroll 28s linear infinite;
+    animation: home-ticker-scroll 32s linear infinite;
 }
 
 .home-cal:hover .cal-ticker-anim,
@@ -244,8 +241,8 @@ h1, h2 {
 .cal-ticker-group {
     display: inline-flex;
     align-items: center;
-    gap: 20px;
-    padding-right: 20px;
+    gap: 24px;
+    padding-right: 24px;
     flex-shrink: 0;
 }
 
@@ -259,15 +256,15 @@ h1, h2 {
 }
 
 .cal-ticker-day-pill {
-    font-size: 11px;
+    font-size: 13px;
     font-weight: 700;
     letter-spacing: 0.8px;
     text-transform: uppercase;
     padding: 3px 8px;
     border-radius: 6px;
     background: rgba(255, 255, 255, 0.12);
-    color: rgba(255, 255, 255, 0.8);
-    border: 1px solid rgba(255, 255, 255, 0.16);
+    color: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.2);
     flex-shrink: 0;
     line-height: 1;
     text-shadow: none;
@@ -283,7 +280,7 @@ h1, h2 {
 .cal-ticker-time {
     font-size: 20px;
     font-weight: 500;
-    color: rgba(255, 255, 255, 0.7);
+    color: rgba(255, 255, 255, 0.75);
     font-variant-numeric: tabular-nums;
     line-height: 1;
     text-shadow: none;
@@ -305,7 +302,7 @@ h1, h2 {
 }
 
 .cal-ticker-sep {
-    color: rgba(255, 255, 255, 0.25);
+    color: rgba(255, 255, 255, 0.28);
     font-size: 18px;
     margin: 0 4px;
     flex-shrink: 0;
@@ -373,8 +370,8 @@ h1, h2 {
 }
 
 .row-track .tile {
-    will-change: transform, box-shadow;
-    transition: transform 0.16s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.16s ease-out;
+    will-change: transform;
+    transition: transform 0.16s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .app .label {
@@ -386,7 +383,7 @@ h1, h2 {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    transition: color 0.16s ease-out, transform 0.16s ease-out;
+    transition: color 0.16s ease-out;
 }
 
 .app.focused .tile,
@@ -401,7 +398,7 @@ h1, h2 {
     transform: scale(0.98) translateY(0px) !important;
     filter: brightness(1.22);
     box-shadow: 0 10px 24px rgba(0, 0, 0, 0.5), 0 0 0 2px #ffffff !important;
-    transition: transform 0.08s ease-in, filter 0.08s ease-in, box-shadow 0.08s ease-in;
+    transition: transform 0.08s ease-in, filter 0.08s ease-in;
 }
 
 .app.focused .label {
@@ -571,7 +568,7 @@ h1, h2 {
     backdrop-filter: blur(14px);
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
     will-change: transform;
-    transition: transform 0.16s cubic-bezier(0.16, 1, 0.3, 1), background 0.16s, color 0.16s, box-shadow 0.16s;
+    transition: transform 0.16s cubic-bezier(0.16, 1, 0.3, 1), background 0.16s, color 0.16s;
 }
 
 .gear svg {
@@ -671,10 +668,12 @@ h1, h2 {
     align-items: center;
     padding: 24px 36px;
     margin-bottom: 12px;
-    border-radius: 16px;
+    border-radius: 18px;
     background: rgba(255, 255, 255, 0.06);
     font-size: 36px;
     font-weight: 600;
+    will-change: transform;
+    transition: transform 0.16s cubic-bezier(0.16, 1, 0.3, 1), background 0.16s, color 0.16s;
 }
 
 .setting-label {
@@ -692,8 +691,10 @@ h1, h2 {
 }
 
 .setting-row.focused {
-    background: var(--fg);
-    color: var(--bg);
+    background: #ffffff;
+    color: #0b0e14;
+    transform: scale(1.025);
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.45), 0 0 0 2px rgba(255, 255, 255, 0.9);
 }
 
 .setting-row.focused .setting-value {
@@ -1158,7 +1159,7 @@ html.preview, html.preview body {
 .ss-caption {
     position: absolute;
     left: var(--edge);
-    bottom: 96px;
+    bottom: 84px;
     transition: transform 1200ms ease-out;
 }
 
@@ -1313,7 +1314,8 @@ html.preview, html.preview body {
     background: rgba(255, 255, 255, 0.08);
     border: 1px solid rgba(255, 255, 255, 0.12);
     cursor: pointer;
-    transition: transform 0.16s ease-out, background 0.16s, box-shadow 0.16s;
+    will-change: transform;
+    transition: transform 0.16s cubic-bezier(0.16, 1, 0.3, 1), background 0.16s, color 0.16s;
 }
 
 .cal-filter-pill.active {
@@ -1352,7 +1354,8 @@ html.preview, html.preview body {
     background: rgba(255, 255, 255, 0.08);
     border: 1px solid rgba(255, 255, 255, 0.12);
     cursor: pointer;
-    transition: transform 0.16s ease-out, background 0.16s, box-shadow 0.16s;
+    will-change: transform;
+    transition: transform 0.16s cubic-bezier(0.16, 1, 0.3, 1), background 0.16s, color 0.16s;
 }
 
 .cal-nav-btn.focused {
@@ -1385,7 +1388,8 @@ html.preview, html.preview body {
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), background 0.18s, border-color 0.18s, box-shadow 0.18s;
+    will-change: transform;
+    transition: transform 0.16s cubic-bezier(0.16, 1, 0.3, 1), background 0.16s, border-color 0.16s;
 }
 
 .day-col.is-today {
@@ -1542,18 +1546,19 @@ html.preview, html.preview body {
     display: flex;
     min-width: 380px;
     max-width: 460px;
-    background: rgba(255, 255, 255, 0.07);
+    background: rgba(255, 255, 255, 0.08);
     border: 1px solid rgba(255, 255, 255, 0.14);
-    border-radius: 18px;
+    border-radius: 20px;
     overflow: hidden;
-    transition: transform 0.16s ease-out, box-shadow 0.16s, background 0.16s;
+    will-change: transform;
+    transition: transform 0.16s cubic-bezier(0.16, 1, 0.3, 1), background 0.16s ease-out;
 }
 
 .detail-card.focused {
     transform: scale(1.04);
-    background: rgba(255, 255, 255, 0.15);
-    border-color: rgba(255, 255, 255, 0.9);
-    box-shadow: 0 0 0 2.5px rgba(255, 255, 255, 0.9), 0 16px 36px rgba(0, 0, 0, 0.55);
+    background: rgba(255, 255, 255, 0.16);
+    border-color: rgba(255, 255, 255, 0.95);
+    box-shadow: 0 0 0 2.5px rgba(255, 255, 255, 0.95), 0 16px 36px rgba(0, 0, 0, 0.55);
 }
 
 .card-stripe {
@@ -1621,18 +1626,18 @@ html.preview, html.preview body {
 
 .ss-up-next-card {
     position: absolute;
-    bottom: 90px;
-    right: 90px;
+    bottom: 144px;
+    left: var(--edge);
     width: 380px;
-    background: rgba(12, 16, 24, 0.82);
+    background: rgba(12, 16, 24, 0.84);
     border: 1px solid rgba(255, 255, 255, 0.16);
     border-radius: 20px;
-    backdrop-filter: blur(20px);
-    padding: 22px 24px;
+    padding: 20px 24px;
     box-shadow: 0 20px 45px rgba(0, 0, 0, 0.5);
     display: flex;
     flex-direction: column;
     gap: 8px;
+    z-index: 10;
 }
 
 .ss-un-badge {

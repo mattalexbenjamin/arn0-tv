@@ -11,8 +11,13 @@
         var ty = Math.round((h - 1080 * scale) / 2);
         var stage = document.getElementById('stage');
         if (stage) {
-            stage.style.transformOrigin = '0 0';
-            stage.style.transform = 'translate(' + tx + 'px, ' + ty + 'px) scale(' + scale + ')';
+            if (scale === 1 && tx === 0 && ty === 0) {
+                stage.style.transformOrigin = '';
+                stage.style.transform = '';
+            } else {
+                stage.style.transformOrigin = '0 0';
+                stage.style.transform = 'translate(' + tx + 'px, ' + ty + 'px) scale(' + scale + ')';
+            }
         }
     }
 
@@ -23,6 +28,7 @@
     Settings.init();
     Screensaver.init();
     Weather.start();
+    if (window.Calendar) Calendar.init();
     if (window.CalendarView) CalendarView.init();
     Home.init();
 
