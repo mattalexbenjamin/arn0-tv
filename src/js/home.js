@@ -367,21 +367,28 @@
                             }
                             var item = document.createElement('span');
                             item.className = 'cal-ticker-item';
+
+                            var dayBadge = document.createElement('span');
+                            dayBadge.className = 'cal-ticker-day-pill';
+                            dayBadge.textContent = ev.dayLabel || info.dayLabel;
+                            item.appendChild(dayBadge);
+
                             if (ev.calColor) {
                                 var dot = document.createElement('span');
                                 dot.className = 'cal-ticker-dot';
                                 dot.style.background = ev.calColor;
                                 item.appendChild(dot);
                             }
-                            var daySpan = document.createElement('span');
-                            daySpan.className = 'cal-ticker-day';
-                            daySpan.textContent = ev.dayLabel || info.dayLabel;
-                            item.appendChild(daySpan);
 
                             var timeSpan = document.createElement('span');
                             timeSpan.className = 'cal-ticker-time';
                             timeSpan.textContent = ev.time;
                             item.appendChild(timeSpan);
+
+                            var innerSep = document.createElement('span');
+                            innerSep.className = 'cal-ticker-inner-sep';
+                            innerSep.textContent = '·';
+                            item.appendChild(innerSep);
 
                             var titleSpan = document.createElement('span');
                             titleSpan.className = 'cal-ticker-title';

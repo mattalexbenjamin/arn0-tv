@@ -201,11 +201,16 @@ h1, h2 {
 
 .cal-ticker-viewport {
     position: relative;
-    max-width: 950px;
+    max-width: 960px;
+    height: 36px;
     overflow: hidden;
     white-space: nowrap;
     display: inline-flex;
     align-items: center;
+    contain: strict;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    text-shadow: none;
 }
 
 .cal-ticker-track {
@@ -213,10 +218,13 @@ h1, h2 {
     align-items: center;
     white-space: nowrap;
     will-change: transform;
+    transform: translate3d(0, 0, 0);
+    backface-visibility: hidden;
+    text-shadow: none;
 }
 
 .cal-ticker-anim {
-    animation: home-ticker-scroll 24s linear infinite;
+    animation: home-ticker-scroll 28s linear infinite;
 }
 
 .home-cal:hover .cal-ticker-anim,
@@ -236,17 +244,33 @@ h1, h2 {
 .cal-ticker-group {
     display: inline-flex;
     align-items: center;
-    gap: 16px;
-    padding-right: 16px;
+    gap: 20px;
+    padding-right: 20px;
     flex-shrink: 0;
 }
 
 .cal-ticker-item {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    font-size: 24px;
-    font-weight: 500;
+    gap: 10px;
+    font-size: 20px;
+    line-height: 1;
+    text-shadow: none;
+}
+
+.cal-ticker-day-pill {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.12);
+    color: rgba(255, 255, 255, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    flex-shrink: 0;
+    line-height: 1;
+    text-shadow: none;
 }
 
 .cal-ticker-dot {
@@ -256,31 +280,36 @@ h1, h2 {
     flex-shrink: 0;
 }
 
-.cal-ticker-day {
-    font-size: 15px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.8px;
-    color: rgba(255, 255, 255, 0.6);
+.cal-ticker-time {
+    font-size: 20px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 0.7);
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+    text-shadow: none;
 }
 
-.cal-ticker-time {
-    font-size: 21px;
-    font-weight: 500;
-    color: rgba(255, 255, 255, 0.8);
-    font-variant-numeric: tabular-nums;
+.cal-ticker-inner-sep {
+    font-size: 18px;
+    color: rgba(255, 255, 255, 0.35);
+    line-height: 1;
+    text-shadow: none;
 }
 
 .cal-ticker-title {
-    font-size: 24px;
+    font-size: 20px;
     font-weight: 600;
     color: #ffffff;
+    line-height: 1;
+    text-shadow: none;
 }
 
 .cal-ticker-sep {
-    color: rgba(255, 255, 255, 0.35);
-    font-size: 20px;
+    color: rgba(255, 255, 255, 0.25);
+    font-size: 18px;
     margin: 0 4px;
+    flex-shrink: 0;
+    text-shadow: none;
 }
 
 #home-wx-cond {
