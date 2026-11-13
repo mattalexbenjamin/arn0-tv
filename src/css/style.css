@@ -1152,31 +1152,41 @@ html.preview, html.preview body {
 /* ---------- Skylight Dayboard Calendar View ---------- */
 
 .cal-head {
-    top: 48px;
+    top: 44px;
     left: var(--cal-edge);
     right: var(--cal-edge);
     display: flex;
     justify-content: space-between;
-    align-items: flex-end;
+    align-items: center;
+    height: 56px;
 }
 
 .cal-title-block {
-    display: flex;
+    display: inline-flex;
     align-items: baseline;
-    gap: 18px;
+    gap: 14px;
 }
 
 .cal-title-block h1 {
-    font-size: 48px;
+    font-family: "Georgia", "Palatino", "Times New Roman", "Outfit", serif;
+    font-size: 38px;
     font-weight: 700;
-    letter-spacing: -0.5px;
+    letter-spacing: -0.3px;
     color: #ffffff;
+    margin: 0;
+    padding: 0;
+    line-height: 1;
 }
 
 .cal-subtitle {
-    font-size: 26px;
+    font-family: var(--font);
+    font-size: 20px;
     font-weight: 500;
-    color: rgba(255, 255, 255, 0.55);
+    color: rgba(255, 255, 255, 0.45);
+    margin: 0;
+    padding: 0;
+    line-height: 1;
+    letter-spacing: 0.2px;
 }
 
 .cal-filters {
