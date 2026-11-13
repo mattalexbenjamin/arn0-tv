@@ -356,7 +356,7 @@
                 if (tickerTrack && calEl._sig !== sig) {
                     calEl._sig = sig;
                     var buildGroup = function () {
-                        var group = document.createElement('div');
+                        var group = document.createElement('span');
                         group.className = 'cal-ticker-group';
                         info.events.forEach(function (ev, i) {
                             if (i > 0) {
