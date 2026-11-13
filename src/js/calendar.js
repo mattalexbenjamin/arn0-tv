@@ -335,6 +335,10 @@
 
         if (future.length === 0) return null;
 
+        var nowDate = new Date();
+        var tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+
         var first = future[0];
         var firstDate = new Date(first.start);
         var firstDayStr = firstDate.toDateString();
@@ -343,20 +347,25 @@
             return new Date(e.start).toDateString() === firstDayStr;
         });
 
-        var nowDate = new Date();
+        var candidateEvents = sameDay;
+        if (candidateEvents.length < 4) {
+            candidateEvents = future.slice(0, 6);
+        }
+
         var isToday = (firstDayStr === nowDate.toDateString());
-        var tomorrow = new Date();
-        tomorrow.setDate(tomorrow.getDate() + 1);
         var isTomorrow = (firstDayStr === tomorrow.toDateString());
+        var primaryDayLabel = isToday ? 'Today' : (isTomorrow ? 'Tomorrow' : (firstDate.getMonth() + 1) + '/' + firstDate.getDate());
 
-        var dayLabel = isToday ? 'Today' : (isTomorrow ? 'Tomorrow' : (firstDate.getMonth() + 1) + '/' + firstDate.getDate());
-
-        var eventItems = sameDay.map(function (e) {
+        var eventItems = candidateEvents.map(function (e) {
             var d = new Date(e.start);
+            var dStr = d.toDateString();
+            var dayLabel = (dStr === nowDate.toDateString()) ? 'Today' :
+                           (dStr === tomorrow.toDateString() ? 'Tomorrow' : (DAY_NAMES[d.getDay()] + ' ' + (d.getMonth() + 1) + '/' + d.getDate()));
             return {
                 calId: e.calId,
                 calName: e.calName,
                 calColor: e.calColor,
+                dayLabel: dayLabel,
                 time: e.allDay ? 'All Day' : formatTime(d),
                 summary: e.summary,
                 allDay: e.allDay,
@@ -365,7 +374,7 @@
         });
 
         return {
-            dayLabel: dayLabel,
+            dayLabel: primaryDayLabel,
             events: eventItems,
             firstEvent: eventItems[0],
             count: eventItems.length

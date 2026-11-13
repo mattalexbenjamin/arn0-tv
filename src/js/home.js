@@ -348,16 +348,68 @@
         if (calEl && window.Calendar) {
             var info = Calendar.upcoming();
             if (info && info.events && info.events.length > 0) {
-                var textParts = info.events.map(function (ev) {
-                    if (ev.allDay) return ev.summary;
-                    return ev.time + ' · ' + ev.summary;
-                });
-                $('home-cal-text').textContent = info.dayLabel + ' · ' + textParts.join('   |   ');
+                var sig = info.events.map(function (e) {
+                    return e.summary + '|' + e.time + '|' + (e.dayLabel || '') + '|' + (e.calColor || '');
+                }).join(';;');
+
+                var tickerTrack = $('home-cal-ticker');
+                if (tickerTrack && calEl._sig !== sig) {
+                    calEl._sig = sig;
+                    var buildGroup = function () {
+                        var group = document.createElement('div');
+                        group.className = 'cal-ticker-group';
+                        info.events.forEach(function (ev, i) {
+                            if (i > 0) {
+                                var sep = document.createElement('span');
+                                sep.className = 'cal-ticker-sep';
+                                sep.textContent = '·';
+                                group.appendChild(sep);
+                            }
+                            var item = document.createElement('span');
+                            item.className = 'cal-ticker-item';
+                            if (ev.calColor) {
+                                var dot = document.createElement('span');
+                                dot.className = 'cal-ticker-dot';
+                                dot.style.background = ev.calColor;
+                                item.appendChild(dot);
+                            }
+                            var daySpan = document.createElement('span');
+                            daySpan.className = 'cal-ticker-day';
+                            daySpan.textContent = ev.dayLabel || info.dayLabel;
+                            item.appendChild(daySpan);
+
+                            var timeSpan = document.createElement('span');
+                            timeSpan.className = 'cal-ticker-time';
+                            timeSpan.textContent = ev.time;
+                            item.appendChild(timeSpan);
+
+                            var titleSpan = document.createElement('span');
+                            titleSpan.className = 'cal-ticker-title';
+                            titleSpan.textContent = ev.summary;
+                            item.appendChild(titleSpan);
+
+                            group.appendChild(item);
+                        });
+                        return group;
+                    };
+
+                    tickerTrack.innerHTML = '';
+                    var g1 = buildGroup();
+                    var g2 = buildGroup();
+                    g2.setAttribute('aria-hidden', 'true');
+                    tickerTrack.appendChild(g1);
+                    tickerTrack.appendChild(g2);
+                    tickerTrack.classList.remove('cal-ticker-anim');
+                    // Force reflow so animation starts clean
+                    void tickerTrack.offsetWidth;
+                    tickerTrack.classList.add('cal-ticker-anim');
+                }
                 calEl._item = { kind: 'calendar' };
                 calEl.onclick = function () { UI.show('calendar'); };
                 calEl.classList.remove('hidden');
             } else {
                 calEl.classList.add('hidden');
+                calEl._sig = null;
             }
         }
     }
